@@ -25,6 +25,8 @@ function SignUp(props) {
     if (backResponse.result) {
       props.saveUser(backResponse.user);
       props.navigation.navigate("Home");
+    } else {
+      console.log(backResponse.message);
     }
   };
 

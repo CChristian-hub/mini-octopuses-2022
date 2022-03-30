@@ -26,6 +26,8 @@ function SignIn(props) {
       props.saveUser(backResponse.user);
       AsyncStorage.setItem('token', backResponse.user.token);
       props.navigation.navigate("Home");
+    } else {
+      console.log(backResponse.message);
     }
   };
 

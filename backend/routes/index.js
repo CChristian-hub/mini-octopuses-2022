@@ -24,37 +24,51 @@ router.get("/", function (req, res, next) {
 
 //* User's routes *//
 router.post("/sign-up", async function (req, res, next) {
-  let user = await UserModel.findOne({ email: req.body.email });
+  if (req.body.username.trim().length === 0 || req.body.email.trim().length === 0 || req.body.password.trim().length === 0) {
+    return res.json({ result: false, message: "Error in sign-up: please fill all the fields" });
+  }
+  if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(req.body.email)) {
+    return res.json({ result: false, message: "Error in sign-up: invalid email format" });
+  }
 
-  if (!user) {
-    let newUser = new UserModel({
-      username: req.body.username,
-      password: bcrypt.hashSync(req.body.password, 10),
-      email: req.body.email,
-      token: uid2(32),
-      profilPicture: "temporaire String picture",
-      isGuest: req.body.isGuest === "false" ? false : true,
-      topics: [],
-      gameList: [],
-      progression: [],
+  let usernameCheck = await UserModel.findOne({ username: req.body.username });
+  let emailCheck = await UserModel.findOne({ email: req.body.email });
+  if (usernameCheck) {
+    return res.json({ result: false, message: "Error in sign-up: username already taken" });
+  }
+  if (emailCheck) {
+    return res.json({ result: false, message: "Error in sign-up: email already taken" });
+  }
+
+  let newUser = new UserModel({
+    username: req.body.username,
+    password: bcrypt.hashSync(req.body.password, 10),
+    email: req.body.email,
+    token: uid2(32),
+    profilPicture: "temporaire String picture",
+    isGuest: req.body.isGuest === "false" ? false : true,
+    topics: [],
+    gameList: [],
+    progression: [],
+  });
+
+  let newUserStatus = await newUser.save();
+  if (!newUserStatus) {
+    return res.json({
+      result: false,
+      message: "Erreur: La création de votre compte a rencontré un problème",
     });
-
-    let newUserStatus = await newUser.save();
-    if (!newUserStatus) {
-      return res.json({
-        result: false,
-        message: "Erreur: La création de votre compte a rencontré un problème",
-      });
-    } else {
-      return res.json({ result: true, user: newUserStatus });
-    }
+  } else {
+    return res.json({ result: true, user: newUserStatus });
   }
 });
 
 router.post("/sign-in", async function (req, res, next) {
-  let user = await UserModel.findOne({
-    email: req.body.email,
-  });
+  if (req.body.email.trim().length === 0 || req.body.password.trim().length === 0) {
+    return res.json({ result: false, message: "Please fill all the fields" });
+  }
+
+  let user = await UserModel.findOne({ email: req.body.email });
 
   if (user) {
     if (bcrypt.compareSync(req.body.password, user.password)) {
